@@ -6,21 +6,27 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct ContentView: View {
-    @State private var friends: [Friend] = [
-        Friend(name: "Raimy", birthday: .now),
-        Friend(name: "Tali", birthday: Date(timeIntervalSince1970: 0))
-    ]
+    @Query(sort: \Friend.name) private var friends: [Friend]
+    @Environment(\.modelContext) private var context
     
     @State private var newName = ""
     @State private var newDate = Date.now
+    @State private var newNote = ""
     
     var body: some View {
         NavigationStack {
-            List(friends, id: \.name) { friend in
+            List(friends) { friend in
                 HStack {
+                    if friend.isBirthdayToday {
+                        Image(systemName: "birthday.cake")
+                    }
+
                     Text(friend.name)
+                        .bold(friend.isBirthdayToday)
+                    
                     Spacer()
                     Text(friend.birthday, format: .dateTime.month(.wide).day().year())
                 }
@@ -34,14 +40,18 @@ struct ContentView: View {
                     DatePicker(selection: $newDate, in: Date.distantPast...Date.now, displayedComponents: .date) {
                         TextField("Name", text: $newName)
                             .textFieldStyle(.roundedBorder)
+                        
+                        TextField("Notes", text: $newNote)
+                            .textFieldStyle(.roundedBorder)
                     }
                     
                     Button("Save") {
-                        let newFriend = Friend(name: newName, birthday: newDate)
-                        friends.append(newFriend)
+                        let newFriend = Friend(name: newName, birthday: newDate, note: newNote)
+                        context.insert(newFriend)
                         
                         newName = ""
                         newDate = .now
+                        newNote = ""
                     }
                     .bold()
                 }
@@ -54,4 +64,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
+        .modelContainer(for: Friend.self, inMemory: true)
 }
