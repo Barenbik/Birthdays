@@ -10,9 +10,9 @@ import SwiftData
 
 @Model
 class Friend {
-    let name: String
-    let birthday: Date
-    let note: String
+    var name: String
+    var birthday: Date
+    var note: String
     
     init(name: String, birthday: Date, note: String) {
         self.name = name

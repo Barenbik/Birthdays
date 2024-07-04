@@ -9,56 +9,57 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
-    @Query(sort: \Friend.name) private var friends: [Friend]
     @Environment(\.modelContext) private var context
     
-    @State private var newName = ""
-    @State private var newDate = Date.now
-    @State private var newNote = ""
+    @Query(sort: \Friend.name) private var friends: [Friend]
+    
+    @State private var newFriend: Friend?
     
     var body: some View {
         NavigationStack {
-            List(friends) { friend in
-                HStack {
-                    if friend.isBirthdayToday {
-                        Image(systemName: "birthday.cake")
+            List {
+                ForEach(friends) { friend in
+                    NavigationLink {
+                        FriendView(friend: friend)
+                    } label: {
+                        HStack {
+                            if friend.isBirthdayToday {
+                                Image(systemName: "birthday.cake")
+                            }
+                            
+                            Text(friend.name)
+                                .bold(friend.isBirthdayToday)
+                            
+                            Spacer()
+                            
+                            Text(friend.birthday, format: .dateTime.month(.wide).day().year())
+                        }
+                        
                     }
-
-                    Text(friend.name)
-                        .bold(friend.isBirthdayToday)
-                    
-                    Spacer()
-                    Text(friend.birthday, format: .dateTime.month(.wide).day().year())
                 }
             }
             .navigationTitle("Birthdays")
-            .safeAreaInset(edge: .bottom) {
-                VStack(alignment: .center, spacing: 20) {
-                    Text("New Birthday")
-                        .font(.headline)
-                    
-                    DatePicker(selection: $newDate, in: Date.distantPast...Date.now, displayedComponents: .date) {
-                        TextField("Name", text: $newName)
-                            .textFieldStyle(.roundedBorder)
-                        
-                        TextField("Notes", text: $newNote)
-                            .textFieldStyle(.roundedBorder)
+            .toolbar {
+                ToolbarItem {
+                    Button(action: addFriend) {
+                        Label("Add Friend", systemImage: "plus")
                     }
-                    
-                    Button("Save") {
-                        let newFriend = Friend(name: newName, birthday: newDate, note: newNote)
-                        context.insert(newFriend)
-                        
-                        newName = ""
-                        newDate = .now
-                        newNote = ""
-                    }
-                    .bold()
                 }
-                .padding()
-                .background(.bar)
+            }
+            .sheet(item: $newFriend) { friend in
+                NavigationStack {
+                    FriendView(friend: friend, isNew: true)
+                }
+                .interactiveDismissDisabled()
             }
         }
+    }
+    
+    private func addFriend() {
+        let newItem = Friend(name: "", birthday: .now, note: "")
+        
+        context.insert(newItem)
+        newFriend = newItem
     }
 }
 
